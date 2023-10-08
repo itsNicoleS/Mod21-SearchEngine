@@ -3,6 +3,13 @@ const path = require('path');
 const db = require('./config/connection');
 const routes = require('./routes');
 
+// const {ApolloServer} = require('apollo-server-express'); 
+// const typeDefs = require('./PathtoGraphQlSchema'); 
+// const resolvers = require('./pathtoGraphQL-resolvers');
+
+// const server = new ApolloServer({typeDefs, resolvers});
+// server.applyMiddleware ({ app }); 
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
