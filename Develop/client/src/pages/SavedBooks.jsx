@@ -1,4 +1,9 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
+import { useQuery, useMutation } from '@apollo/client';
+import { GET_ME } from '../utils/queries'; // Import the GET_ME query
+import { REMOVE_BOOK } from '../utils/mutations'; // Import the REMOVE_BOOK mutation
+import Auth from '../utils/auth';
+import { removeBookId } from '../utils/localStorage';
 import {
   Container,
   Card,
@@ -7,42 +12,11 @@ import {
   Col
 } from 'react-bootstrap';
 
-import { getMe, deleteBook } from '../utils/API';
-import Auth from '../utils/auth';
-import { removeBookId } from '../utils/localStorage';
-
 const SavedBooks = () => {
-  const [userData, setUserData] = useState({});
+  const { loading, error, data } = useQuery(GET_ME); // Use useQuery hook to fetch user data
+  const [removeBookMutation] = useMutation(REMOVE_BOOK); // Use useMutation hook for REMOVE_BOOK mutation
 
-  // use this to determine if `useEffect()` hook needs to run again
-  const userDataLength = Object.keys(userData).length;
-
-  useEffect(() => {
-    const getUserData = async () => {
-      try {
-        const token = Auth.loggedIn() ? Auth.getToken() : null;
-
-        if (!token) {
-          return false;
-        }
-
-        const response = await getMe(token);
-
-        if (!response.ok) {
-          throw new Error('something went wrong!');
-        }
-
-        const user = await response.json();
-        setUserData(user);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    getUserData();
-  }, [userDataLength]);
-
-  // create function that accepts the book's mongo _id value as param and deletes the book from the database
+  // Function to handle book deletion
   const handleDeleteBook = async (bookId) => {
     const token = Auth.loggedIn() ? Auth.getToken() : null;
 
@@ -51,25 +25,35 @@ const SavedBooks = () => {
     }
 
     try {
-      const response = await deleteBook(bookId, token);
+      const { data: mutationData } = await removeBookMutation({
+        variables: { bookId: bookId }
+      });
 
-      if (!response.ok) {
-        throw new Error('something went wrong!');
+      // If the mutation is successful, update the user data and remove the book's ID from localStorage
+      if (mutationData) {
+        const updatedUser = mutationData.removeBook;
+        // Update the user data state with the updated user data
+        // Note: 'data' here refers to the data returned by the GET_ME query, not the mutation
+        data.me = updatedUser;
+        // Upon success, remove the book's ID from localStorage
+        removeBookId(bookId);
       }
-
-      const updatedUser = await response.json();
-      setUserData(updatedUser);
-      // upon success, remove book's id from localStorage
-      removeBookId(bookId);
     } catch (err) {
       console.error(err);
     }
   };
 
-  // if data isn't here yet, say so
-  if (!userDataLength) {
+  // Loading state
+  if (loading) {
     return <h2>LOADING...</h2>;
   }
+
+  // Error state
+  if (error) {
+    return <h2>Error: {error.message}</h2>;
+  }
+
+  const userData = data.me;
 
   return (
     <>
