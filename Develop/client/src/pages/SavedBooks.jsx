@@ -14,7 +14,7 @@ import {
 
 const SavedBooks = () => {
   const { loading, error, data } = useQuery(GET_ME); // Use useQuery hook to fetch user data
-  const [removeBookMutation] = useMutation(REMOVE_BOOK); // Use useMutation hook for REMOVE_BOOK mutation
+  const [removeBook] = useMutation(REMOVE_BOOK); // Use useMutation hook for REMOVE_BOOK mutation
 
   // Function to handle book deletion
   const handleDeleteBook = async (bookId) => {
@@ -25,19 +25,12 @@ const SavedBooks = () => {
     }
 
     try {
-      const { data: mutationData } = await removeBookMutation({
-        variables: { bookId: bookId }
+      const { data } = await removeBook({
+        variables: { bookId },
       });
 
-      // If the mutation is successful, update the user data and remove the book's ID from localStorage
-      if (mutationData) {
-        const updatedUser = mutationData.removeBook;
-        // Update the user data state with the updated user data
-        // Note: 'data' here refers to the data returned by the GET_ME query, not the mutation
-        data.me = updatedUser;
-        // Upon success, remove the book's ID from localStorage
-        removeBookId(bookId);
-      }
+      // upon success, remove book's id from localStorage
+      removeBookId(bookId);
     } catch (err) {
       console.error(err);
     }
